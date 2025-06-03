@@ -69,7 +69,7 @@ export function Sidebar() {
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
           <PiggyBank className="h-6 w-6 text-primary" />
-          <span>BudgetTracker</span>
+          <span>FinanceFlow</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 px-2">
