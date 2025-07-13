@@ -8,8 +8,8 @@ import { UserProvider } from '@/lib/context/user-context';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Budget Tracker',
-  description: 'Track your expenses, income, and split bills with friends',
+  title: 'FinanceFlow',
+  description: 'Track your expenses, income easily',
 };
 
 export default function RootLayout({
