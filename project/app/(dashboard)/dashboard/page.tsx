@@ -1,9 +1,12 @@
 "use client"
 
-import DashboardLayout from "@/components/layout/dashboard-layout"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useUser } from "@/lib/context/user-context"
+import { useTransactions } from "@/lib/hooks/useTransactions"
+import { useAccounts } from "@/lib/hooks/useAccounts"
 import { 
   LineChart, 
   Line, 
@@ -20,67 +23,64 @@ import {
   Cell
 } from "recharts"
 import { ArrowUpRight, Plus, Wallet } from "lucide-react"
-
-// Sample data for demonstration
-const transactionData = [
-  { name: 'Mon', expense: 120, income: 240 },
-  { name: 'Tue', expense: 300, income: 139 },
-  { name: 'Wed', expense: 200, income: 980 },
-  { name: 'Thu', expense: 278, income: 390 },
-  { name: 'Fri', expense: 189, income: 480 },
-  { name: 'Sat', expense: 239, income: 380 },
-  { name: 'Sun', expense: 349, income: 430 },
-]
-
-const categoryData = [
-  { name: 'Food', value: 400 },
-  { name: 'Transport', value: 300 },
-  { name: 'Entertainment', value: 300 },
-  { name: 'Shopping', value: 200 },
-  { name: 'Others', value: 100 },
-]
+import { format } from "date-fns"
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
 
-const recentTransactions = [
-  {
-    id: '1',
-    name: 'Grocery Shopping',
-    amount: -85.32,
-    date: '2025-04-10',
-    category: 'Food'
-  },
-  {
-    id: '2',
-    name: 'Salary',
-    amount: 2400,
-    date: '2025-04-01',
-    category: 'Income'
-  },
-  {
-    id: '3',
-    name: 'Netflix Subscription',
-    amount: -15.99,
-    date: '2025-04-05',
-    category: 'Entertainment'
-  },
-  {
-    id: '4',
-    name: 'Uber Ride',
-    amount: -24.50,
-    date: '2025-04-08',
-    category: 'Transport'
-  },
-  {
-    id: '5',
-    name: 'Freelance Payment',
-    amount: 350,
-    date: '2025-04-07',
-    category: 'Income'
-  }
-]
-
 export default function DashboardPage() {
+  const { user, isLoading: userLoading } = useUser()
+  const { transactions, loading: transactionsLoading } = useTransactions(user?.id || null)
+  const { accounts, totalBalance, loading: accountsLoading } = useAccounts(user?.id || null)
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [weeklyData, setWeeklyData] = useState<any[]>([])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    const fetchAnalytics = async () => {
+      try {
+        const [monthlyResponse, weeklyResponse] = await Promise.all([
+          fetch(`/api/analytics?userId=${user.id}&type=monthly`),
+          fetch(`/api/analytics?userId=${user.id}&type=weekly`)
+        ])
+
+        const monthlyData = await monthlyResponse.json()
+        const weeklyData = await weeklyResponse.json()
+
+        setAnalytics(monthlyData)
+        setWeeklyData(weeklyData)
+      } catch (error) {
+        console.error('Error fetching analytics:', error)
+      }
+    }
+
+    fetchAnalytics()
+  }, [user?.id])
+
+  if (userLoading || transactionsLoading || accountsLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const recentTransactions = transactions.slice(0, 5)
+  const monthlyIncome = analytics?.totalIncome || 0
+  const monthlyExpenses = analytics?.totalExpenses || 0
+  const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome * 100) : 0
+
+  const categoryData = analytics?.categoryBreakdown ? 
+    Object.entries(analytics.categoryBreakdown).map(([name, value]) => ({
+      name,
+      value: value as number
+    })) : []
+
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between space-y-2">
@@ -108,9 +108,9 @@ export default function DashboardPage() {
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$4,231.89</div>
+                <div className="text-2xl font-bold">${totalBalance.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  Across {accounts.length} account{accounts.length !== 1 ? 's' : ''}
                 </p>
               </CardContent>
             </Card>
@@ -133,9 +133,9 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$2,750.00</div>
+                <div className="text-2xl font-bold">${monthlyIncome.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground">
-                  +2.5% from last month
+                  This month
                 </p>
               </CardContent>
             </Card>
@@ -157,9 +157,9 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$1,234.56</div>
+                <div className="text-2xl font-bold">${monthlyExpenses.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground">
-                  -4.5% from last month
+                  This month
                 </p>
               </CardContent>
             </Card>
@@ -182,9 +182,9 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">32.9%</div>
+                <div className="text-2xl font-bold">{savingsRate.toFixed(1)}%</div>
                 <p className="text-xs text-muted-foreground">
-                  +8.2% from last month
+                  Of monthly income
                 </p>
               </CardContent>
             </Card>
@@ -200,7 +200,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={transactionData}>
+                  <BarChart data={weeklyData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -220,25 +220,31 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                {categoryData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    No expense data available
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -253,10 +259,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-8">
-                  {recentTransactions.map((transaction) => (
+                  {recentTransactions.length > 0 ? recentTransactions.map((transaction) => (
                     <div className="flex items-center\" key={transaction.id}>
-                      <div className={`rounded-full p-2 ${transaction.amount > 0 ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-500/20 text-red-700 dark:text-red-400'}`}>
-                        {transaction.amount > 0 ? (
+                      <div className={`rounded-full p-2 ${transaction.type === 'INCOME' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-500/20 text-red-700 dark:text-red-400'}`}>
+                        {transaction.type === 'INCOME' ? (
                           <ArrowUpRight className="h-4 w-4" />
                         ) : (
                           <svg
@@ -275,17 +281,21 @@ export default function DashboardPage() {
                       </div>
                       <div className="ml-4 space-y-1">
                         <p className="text-sm font-medium leading-none">
-                          {transaction.name}
+                          {transaction.description}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {transaction.category} • {transaction.date}
+                          {transaction.category?.name || 'Other'} • {format(new Date(transaction.date), 'MMM dd, yyyy')}
                         </p>
                       </div>
-                      <div className={`ml-auto font-medium ${transaction.amount > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
-                        {transaction.amount > 0 ? '+' : ''}{transaction.amount.toFixed(2)}
+                      <div className={`ml-auto font-medium ${transaction.type === 'INCOME' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
+                        {transaction.type === 'INCOME' ? '+' : '-'}${transaction.amount.toFixed(2)}
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="flex items-center justify-center h-32 text-muted-foreground">
+                      No recent transactions
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -301,22 +311,26 @@ export default function DashboardPage() {
                   <div className="rounded-lg bg-muted p-4">
                     <h4 className="text-sm font-medium">Spending Trends</h4>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Your food expenses have increased by 15% compared to last month. 
-                      Consider setting a budget for dining out to better manage this category.
+                      {monthlyExpenses > 0 
+                        ? `You've spent $${monthlyExpenses.toFixed(2)} this month across ${Object.keys(analytics?.categoryBreakdown || {}).length} categories.`
+                        : "Start tracking your expenses to get personalized insights about your spending patterns."
+                      }
                     </p>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
                     <h4 className="text-sm font-medium">Saving Opportunity</h4>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Based on your income pattern, you could increase your monthly savings 
-                      by $200 by reducing entertainment expenses.
+                      {savingsRate > 0 
+                        ? `Great job! You're saving ${savingsRate.toFixed(1)}% of your income this month.`
+                        : "Consider setting up automatic transfers to build your savings habit."
+                      }
                     </p>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Upcoming Bills</h4>
+                    <h4 className="text-sm font-medium">Account Summary</h4>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      You have 3 subscription renewals coming up this month totaling $45.97. 
-                      Review them to ensure you're still using these services.
+                      You have {accounts.length} account{accounts.length !== 1 ? 's' : ''} with a total balance of ${totalBalance.toFixed(2)}.
+                      {accounts.length === 0 && " Add your first account to start tracking your finances."}
                     </p>
                   </div>
                 </div>

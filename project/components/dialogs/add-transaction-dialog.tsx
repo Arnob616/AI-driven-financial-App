@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,10 +8,17 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
+import { useUser } from "@/lib/context/user-context"
+import { useTransactions } from "@/lib/hooks/useTransactions"
+import { useAccounts } from "@/lib/hooks/useAccounts"
 
 export function AddTransactionDialog() {
+  const { user } = useUser()
+  const { addTransaction } = useTransactions(user?.id || null)
+  const { accounts } = useAccounts(user?.id || null)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [categories, setCategories] = useState<any[]>([])
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
@@ -20,14 +27,44 @@ export function AddTransactionDialog() {
     account: ""
   })
 
+  useEffect(() => {
+    if (user?.id) {
+      const fetchCategories = async () => {
+        try {
+          const response = await fetch(`/api/categories?userId=${user.id}`)
+          const data = await response.json()
+          setCategories(data)
+        } catch (error) {
+          console.error('Error fetching categories:', error)
+        }
+      }
+      fetchCategories()
+    }
+  }, [user?.id])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!user?.id) {
+      toast.error("Please log in to add transactions")
+      return
+    }
+
+    if (!formData.description || !formData.amount || !formData.category || !formData.account) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      // Here you would make an API call to add the transaction
-      // For now, we'll simulate it
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await addTransaction({
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        type: formData.type,
+        categoryId: formData.category,
+        accountId: formData.account,
+      })
       
       toast.success("Transaction added successfully!")
       setIsOpen(false)
@@ -107,11 +144,11 @@ export function AddTransactionDialog() {
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="food">Food</SelectItem>
-                <SelectItem value="transport">Transport</SelectItem>
-                <SelectItem value="entertainment">Entertainment</SelectItem>
-                <SelectItem value="shopping">Shopping</SelectItem>
-                <SelectItem value="utilities">Utilities</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.icon} {category.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -126,9 +163,11 @@ export function AddTransactionDialog() {
                 <SelectValue placeholder="Select account" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="main">Main Account</SelectItem>
-                <SelectItem value="savings">Savings Account</SelectItem>
-                <SelectItem value="credit">Credit Card</SelectItem>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name} (${account.balance.toFixed(2)})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
