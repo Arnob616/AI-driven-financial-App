@@ -10,12 +10,3 @@ A simple and elegant personal finance tracking application built with Next.js, P
 - 🌙 **Dark/Light Mode** - Switch between themes for a personalized experience
 - 🔐 **Authentication** - Secure user authentication system
 
-## Tech Stack
-
-- **Frontend**: Next.js 13, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: Neon PostgreSQL
-- **UI Components**: Radix UI, shadcn/ui
-- **Charts**: Recharts
-- **Authentication**: Auth.js
-
