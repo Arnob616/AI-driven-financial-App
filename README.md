@@ -1,7 +1,10 @@
 <img width="1310" height="580" alt="image" src="https://github.com/user-attachments/assets/31b0864f-7039-4ba5-8545-591cec7d9020" />
 
-✨ Features of FinanceFlow
-💰 Track Finances – Monitor your daily, weekly, and monthly income & expenses
-➕➖✏️ Manage Transactions – Add, remove, and update transactions with ease
-📊 Interactive Dashboard – Get a clear visual overview of your financial activity
-🌙☀️ Dark/Light Mode – Switch themes for a personalized experience
+<h2>✨ Features of FinanceFlow</h2>
+
+<ul>
+  <li>💰 <b>Track Finances</b> – Monitor your <i>daily, weekly, and monthly</i> income & expenses</li>
+  <li>➕➖✏️ <b>Manage Transactions</b> – Add, remove, and update transactions with ease</li>
+  <li>📊 <b>Interactive Dashboard</b> – Get a clear visual overview of your financial activity</li>
+  <li>🌙☀️ <b>Dark/Light Mode</b> – Switch themes for a personalized experience</li>
+</ul>
