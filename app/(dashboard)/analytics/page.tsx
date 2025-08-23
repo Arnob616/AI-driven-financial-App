@@ -1,8 +1,10 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useUser } from "@/lib/context/user-context"
 import { 
   AreaChart, 
   Area, 
@@ -21,94 +23,144 @@ import {
   ResponsiveContainer 
 } from "recharts"
 
-// Sample data for demonstration
-const monthlyData = [
-  { name: 'Jan', expense: 1200, income: 2400 },
-  { name: 'Feb', expense: 1300, income: 2500 },
-  { name: 'Mar', expense: 1400, income: 2300 },
-  { name: 'Apr', expense: 1100, income: 2400 },
-  { name: 'May', expense: 1500, income: 2600 },
-  { name: 'Jun', expense: 1200, income: 2550 },
-]
-
-const weeklyData = [
-  { name: 'Mon', expense: 120, income: 240 },
-  { name: 'Tue', expense: 300, income: 139 },
-  { name: 'Wed', expense: 200, income: 980 },
-  { name: 'Thu', expense: 278, income: 390 },
-  { name: 'Fri', expense: 189, income: 480 },
-  { name: 'Sat', expense: 239, income: 380 },
-  { name: 'Sun', expense: 349, income: 430 },
-]
-
-const categoryData = [
-  { name: 'Food', value: 400 },
-  { name: 'Transport', value: 300 },
-  { name: 'Entertainment', value: 300 },
-  { name: 'Shopping', value: 200 },
-  { name: 'Utilities', value: 150 },
-  { name: 'Others', value: 100 },
-]
-
-const savingsData = [
-  { name: 'Jan', amount: 400 },
-  { name: 'Feb', amount: 600 },
-  { name: 'Mar', amount: 550 },
-  { name: 'Apr', amount: 700 },
-  { name: 'May', amount: 900 },
-  { name: 'Jun', amount: 750 },
-]
-
-const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))', 'hsl(var(--chart-1))']
+const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
 
 export default function AnalyticsPage() {
+  const { user } = useUser()
+  const [dailyData, setDailyData] = useState<any>(null)
+  const [weeklyData, setWeeklyData] = useState<any>(null)
+  const [monthlyData, setMonthlyData] = useState<any>(null)
+  const [trendsData, setTrendsData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true)
+        const [dailyResponse, weeklyResponse, monthlyResponse, trendsResponse] = await Promise.all([
+          fetch(`/api/analytics?userId=${user.id}&type=daily`),
+          fetch(`/api/analytics?userId=${user.id}&type=weekly`),
+          fetch(`/api/analytics?userId=${user.id}&type=monthly`),
+          fetch(`/api/analytics?userId=${user.id}&type=trends`)
+        ])
+
+        const [daily, weekly, monthly, trends] = await Promise.all([
+          dailyResponse.json(),
+          weeklyResponse.json(),
+          monthlyResponse.json(),
+          trendsResponse.json()
+        ])
+
+        setDailyData(daily)
+        setWeeklyData(weekly)
+        setMonthlyData(monthly)
+        setTrendsData(trends)
+      } catch (error) {
+        console.error('Error fetching analytics:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAnalytics()
+  }, [user?.id])
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading analytics...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const dailyCategoryData = dailyData?.categoryBreakdown ? 
+    Object.entries(dailyData.categoryBreakdown).map(([name, value]) => ({
+      name,
+      value: value as number
+    })) : []
+
+  const monthlyCategoryData = monthlyData?.categoryBreakdown ? 
+    Object.entries(monthlyData.categoryBreakdown).map(([name, value]) => ({
+      name,
+      value: value as number
+    })) : []
+
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Analytics</h2>
       </div>
       
-      <Tabs defaultValue="monthly" className="space-y-4 mt-6">
+      <Tabs defaultValue="daily" className="space-y-4 mt-6">
         <TabsList>
-          <TabsTrigger value="monthly">Monthly</TabsTrigger>
-          <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="daily">Daily</TabsTrigger>
+          <TabsTrigger value="weekly">Weekly</TabsTrigger>
+          <TabsTrigger value="monthly">Monthly</TabsTrigger>
+          <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
-        <TabsContent value="monthly" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <TabsContent value="daily" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Income vs Expenses</CardTitle>
-                <CardDescription>
-                  Monthly comparison for the past 6 months
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Income</CardTitle>
               </CardHeader>
-              <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="expense" fill="hsl(var(--chart-1))" />
-                    <Bar dataKey="income" fill="hsl(var(--chart-2))" />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  ${dailyData?.totalIncome?.toFixed(2) || '0.00'}
+                </div>
               </CardContent>
             </Card>
             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Expenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  ${dailyData?.totalExpenses?.toFixed(2) || '0.00'}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Net Income</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${(dailyData?.netIncome || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${dailyData?.netIncome?.toFixed(2) || '0.00'}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{dailyData?.transactionCount || 0}</div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {dailyCategoryData.length > 0 && (
+            <Card>
               <CardHeader>
-                <CardTitle>Spending by Category</CardTitle>
+                <CardTitle>Today's Spending by Category</CardTitle>
                 <CardDescription>
-                  Distribution of expenses by category
+                  Distribution of today's expenses
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center">
                 <ResponsiveContainer width="100%" height={350}>
                   <PieChart>
                     <Pie
-                      data={categoryData}
+                      data={dailyCategoryData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -117,7 +169,7 @@ export default function AnalyticsPage() {
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {categoryData.map((entry, index) => (
+                      {dailyCategoryData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -126,166 +178,171 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          </div>
-          <div className="grid grid-cols-1 gap-4">
+          )}
+        </TabsContent>
+        
+        <TabsContent value="weekly" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <Card>
-              <CardHeader>
-                <CardTitle>Financial Trend</CardTitle>
-                <CardDescription>
-                  Income, expenses, and savings over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={350}>
-                  <AreaChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="income" 
-                      stackId="1" 
-                      stroke="hsl(var(--chart-2))" 
-                      fill="hsl(var(--chart-2)/0.2)" 
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="expense" 
-                      stackId="2" 
-                      stroke="hsl(var(--chart-1))" 
-                      fill="hsl(var(--chart-1)/0.2)" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Savings Growth</CardTitle>
-                <CardDescription>
-                  Monthly savings amounts
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={savingsData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="amount" 
-                      stroke="hsl(var(--chart-3))" 
-                      activeDot={{ r: 8 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Insights</CardTitle>
-                <CardDescription>
-                  AI-powered analysis of your finances
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Weekly Income</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Spending Patterns</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Your spending in the Food category has increased by 15% compared to last month. 
-                      This is above your 6-month average.
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Savings Potential</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Based on your income and spending patterns, you could increase your 
-                      monthly savings by 20% by reducing discretionary spending.
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Recommendation</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Consider setting up automatic transfers to your savings account at the beginning 
-                      of each month to reach your savings goals faster.
-                    </p>
-                  </div>
+                <div className="text-2xl font-bold text-green-600">
+                  ${weeklyData?.totalIncome?.toFixed(2) || '0.00'}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Weekly Expenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  ${weeklyData?.totalExpenses?.toFixed(2) || '0.00'}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Net Income</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${(weeklyData?.netIncome || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${weeklyData?.netIncome?.toFixed(2) || '0.00'}
                 </div>
               </CardContent>
             </Card>
           </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Income vs Expenses</CardTitle>
+              <CardDescription>
+                Day by day breakdown for the current week
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={weeklyData?.dailyData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="expense" fill="hsl(var(--chart-1))" name="Expenses" />
+                  <Bar dataKey="income" fill="hsl(var(--chart-2))" name="Income" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </TabsContent>
-        <TabsContent value="weekly" className="space-y-4">
+        
+        <TabsContent value="monthly" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Weekly Income vs Expenses</CardTitle>
+                <CardTitle>Monthly Summary</CardTitle>
                 <CardDescription>
-                  Day by day breakdown for the current week
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={weeklyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="expense" fill="hsl(var(--chart-1))" />
-                    <Bar dataKey="income" fill="hsl(var(--chart-2))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Weekly Insights</CardTitle>
-                <CardDescription>
-                  Analysis of your weekly spending
+                  Overview of this month's finances
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Weekly Summary</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      You've spent $1,675 this week, which is 12% higher than your weekly average.
-                      Wednesday had your highest spending day at $200.
-                    </p>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Total Income:</span>
+                    <span className="text-sm font-medium text-green-600">
+                      ${monthlyData?.totalIncome?.toFixed(2) || '0.00'}
+                    </span>
                   </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Budget Status</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      You're on track with your weekly budget in most categories, 
-                      but Entertainment spending is 30% above your allocated budget.
-                    </p>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Total Expenses:</span>
+                    <span className="text-sm font-medium text-red-600">
+                      ${monthlyData?.totalExpenses?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Net Income:</span>
+                    <span className={`text-sm font-medium ${(monthlyData?.netIncome || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${monthlyData?.netIncome?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Total Transactions:</span>
+                    <span className="text-sm font-medium">{monthlyData?.transactionCount || 0}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
+            
+            {monthlyCategoryData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Monthly Spending by Category</CardTitle>
+                  <CardDescription>
+                    Distribution of this month's expenses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={monthlyCategoryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {monthlyCategoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
-        <TabsContent value="daily" className="space-y-4">
+        
+        <TabsContent value="trends" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Daily Spending</CardTitle>
+              <CardTitle>6-Month Financial Trends</CardTitle>
               <CardDescription>
-                Today's financial activity
+                Income and expense trends over the past 6 months
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex h-96 items-center justify-center">
-                <p className="text-muted-foreground">Daily analytics will appear here</p>
-              </div>
+            <CardContent className="pl-2">
+              <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={trendsData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Area 
+                    type="monotone" 
+                    dataKey="income" 
+                    stackId="1" 
+                    stroke="hsl(var(--chart-2))" 
+                    fill="hsl(var(--chart-2)/0.2)" 
+                    name="Income"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="expense" 
+                    stackId="2" 
+                    stroke="hsl(var(--chart-1))" 
+                    fill="hsl(var(--chart-1)/0.2)" 
+                    name="Expenses"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>

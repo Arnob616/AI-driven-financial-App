@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/db'
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, format } from 'date-fns'
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, format, startOfDay, endOfDay } from 'date-fns'
 
-export async function getMonthlyAnalytics(userId: string, date: Date = new Date()) {
+export async function getDailyAnalytics(userId: string, date: Date = new Date()) {
   try {
-    const startDate = startOfMonth(date)
-    const endDate = endOfMonth(date)
+    const startDate = startOfDay(date)
+    const endDate = endOfDay(date)
 
     const transactions = await prisma.transaction.findMany({
       where: {
@@ -43,7 +43,7 @@ export async function getMonthlyAnalytics(userId: string, date: Date = new Date(
       transactionCount: transactions.length,
     }
   } catch (error) {
-    console.error('Error fetching monthly analytics:', error)
+    console.error('Error fetching daily analytics:', error)
     return {
       totalIncome: 0,
       totalExpenses: 0,
@@ -96,10 +96,81 @@ export async function getWeeklyAnalytics(userId: string, date: Date = new Date()
       })
     }
 
-    return dailyData
+    const totalIncome = transactions
+      .filter(t => t.type === 'INCOME')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const totalExpenses = transactions
+      .filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    return {
+      dailyData,
+      totalIncome,
+      totalExpenses,
+      netIncome: totalIncome - totalExpenses,
+    }
   } catch (error) {
     console.error('Error fetching weekly analytics:', error)
-    return []
+    return {
+      dailyData: [],
+      totalIncome: 0,
+      totalExpenses: 0,
+      netIncome: 0,
+    }
+  }
+}
+
+export async function getMonthlyAnalytics(userId: string, date: Date = new Date()) {
+  try {
+    const startDate = startOfMonth(date)
+    const endDate = endOfMonth(date)
+
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        userId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        category: true,
+      },
+    })
+
+    const totalIncome = transactions
+      .filter(t => t.type === 'INCOME')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const totalExpenses = transactions
+      .filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const categoryBreakdown = transactions
+      .filter(t => t.type === 'EXPENSE')
+      .reduce((acc, transaction) => {
+        const categoryName = transaction.category?.name || 'Other'
+        acc[categoryName] = (acc[categoryName] || 0) + transaction.amount
+        return acc
+      }, {} as Record<string, number>)
+
+    return {
+      totalIncome,
+      totalExpenses,
+      netIncome: totalIncome - totalExpenses,
+      categoryBreakdown,
+      transactionCount: transactions.length,
+    }
+  } catch (error) {
+    console.error('Error fetching monthly analytics:', error)
+    return {
+      totalIncome: 0,
+      totalExpenses: 0,
+      netIncome: 0,
+      categoryBreakdown: {},
+      transactionCount: 0,
+    }
   }
 }
 

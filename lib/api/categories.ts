@@ -45,7 +45,8 @@ export async function getDefaultCategories(userId: string) {
     { name: 'Shopping', icon: '🛍️', color: '#96CEB4' },
     { name: 'Utilities', icon: '💡', color: '#FFEAA7' },
     { name: 'Health', icon: '🏥', color: '#DDA0DD' },
-    { name: 'Income', icon: '💰', color: '#98D8C8' },
+    { name: 'Salary', icon: '💰', color: '#98D8C8' },
+    { name: 'Other', icon: '📝', color: '#A8A8A8' },
   ]
 
   try {

@@ -16,33 +16,16 @@ model User {
   email         String          @unique
   emailVerified DateTime?
   image         String?
-  accounts      Account[]
   transactions  Transaction[]
   categories    Category[]
-  ownedGroups   Group[]         @relation("GroupOwner")
-  groupMembers  GroupMember[]
-  aiInsights    AIInsight[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-}
-
-model Account {
-  id           String        @id @default(cuid())
-  name         String
-  balance      Float         @default(0)
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  @@index([userId])
 }
 
 model Category {
   id           String        @id @default(cuid())
   name         String
-  icon         String        @default("tag")
+  icon         String        @default("📝")
   color        String        @default("#000000")
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -59,73 +42,15 @@ model Transaction {
   amount      Float
   description String
   date        DateTime
-  type        String   @default("EXPENSE")
+  type        String   @default("EXPENSE") // EXPENSE or INCOME
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accountId   String
-  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
   @@index([categoryId])
-  @@index([accountId])
   @@index([date])
-}
-
-model Group {
-  id           String            @id @default(cuid())
-  name         String
-  description  String?
-  ownerId      String
-  owner        User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members      GroupMember[]
-  transactions GroupTransaction[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-
-  @@index([ownerId])
-}
-
-model GroupMember {
-  id       String   @id @default(cuid())
-  groupId  String
-  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  joinedAt DateTime @default(now())
-
-  @@unique([groupId, userId])
-  @@index([groupId])
-  @@index([userId])
-}
-
-model GroupTransaction {
-  id          String   @id @default(cuid())
-  groupId     String
-  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  amount      Float
-  description String
-  date        DateTime
-  payerId     String
-  splitDetails Json
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([groupId])
-}
-
-model AIInsight {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  month     String
-  year      Int
-  content   String
-  createdAt DateTime @default(now())
-
-  @@unique([userId, month, year])
-  @@index([userId])
 }

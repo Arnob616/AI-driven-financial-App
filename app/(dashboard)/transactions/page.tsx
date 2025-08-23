@@ -23,124 +23,62 @@ import {
   ChevronDown, 
   Download, 
   Filter,
-  Plus, 
-  Search
+  Search,
+  Edit,
+  Trash2
 } from "lucide-react"
 import { format } from "date-fns"
 import { TransactionType } from "@/lib/types"
-
-// Sample data for demonstration
-const transactions = [
-  {
-    id: '1',
-    description: 'Grocery Shopping',
-    amount: -85.32,
-    date: new Date('2025-04-10'),
-    category: 'Food',
-    account: 'Main Account',
-    type: 'EXPENSE' as TransactionType
-  },
-  {
-    id: '2',
-    description: 'Salary',
-    amount: 2400,
-    date: new Date('2025-04-01'),
-    category: 'Income',
-    account: 'Main Account',
-    type: 'INCOME' as TransactionType
-  },
-  {
-    id: '3',
-    description: 'Netflix Subscription',
-    amount: -15.99,
-    date: new Date('2025-04-05'),
-    category: 'Entertainment',
-    account: 'Credit Card',
-    type: 'EXPENSE' as TransactionType
-  },
-  {
-    id: '4',
-    description: 'Uber Ride',
-    amount: -24.50,
-    date: new Date('2025-04-08'),
-    category: 'Transport',
-    account: 'Credit Card',
-    type: 'EXPENSE' as TransactionType
-  },
-  {
-    id: '5',
-    description: 'Freelance Payment',
-    amount: 350,
-    date: new Date('2025-04-07'),
-    category: 'Income',
-    account: 'Savings Account',
-    type: 'INCOME' as TransactionType
-  },
-  {
-    id: '6',
-    description: 'Restaurant Dinner',
-    amount: -68.50,
-    date: new Date('2025-04-06'),
-    category: 'Food',
-    account: 'Credit Card',
-    type: 'EXPENSE' as TransactionType
-  },
-  {
-    id: '7',
-    description: 'Mobile Phone Bill',
-    amount: -45.00,
-    date: new Date('2025-04-03'),
-    category: 'Utilities',
-    account: 'Main Account',
-    type: 'EXPENSE' as TransactionType
-  },
-  {
-    id: '8',
-    description: 'Amazon Purchase',
-    amount: -129.99,
-    date: new Date('2025-04-09'),
-    category: 'Shopping',
-    account: 'Credit Card',
-    type: 'EXPENSE' as TransactionType
-  },
-  {
-    id: '9',
-    description: 'Interest',
-    amount: 12.84,
-    date: new Date('2025-04-30'),
-    category: 'Income',
-    account: 'Savings Account',
-    type: 'INCOME' as TransactionType
-  },
-  {
-    id: '10',
-    description: 'Gym Membership',
-    amount: -50.00,
-    date: new Date('2025-04-02'),
-    category: 'Health',
-    account: 'Main Account',
-    type: 'EXPENSE' as TransactionType
-  }
-]
+import { useUser } from "@/lib/context/user-context"
+import { useTransactions } from "@/lib/hooks/useTransactions"
+import { EditTransactionDialog } from "@/components/dialogs/edit-transaction-dialog"
+import { toast } from "sonner"
 
 export default function TransactionsPage() {
+  const { user } = useUser()
+  const { transactions, loading, deleteTransaction } = useTransactions(user?.id || null)
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [editingTransaction, setEditingTransaction] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   
   const filteredTransactions = transactions.filter(transaction => 
     transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    transaction.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transaction.account.toLowerCase().includes(searchQuery.toLowerCase())
+    transaction.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const handleEditTransaction = (transaction: any) => {
+    setEditingTransaction(transaction)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (confirm('Are you sure you want to delete this transaction?')) {
+      try {
+        await deleteTransaction(id)
+        toast.success('Transaction deleted successfully!')
+      } catch (error) {
+        toast.error('Failed to delete transaction')
+      }
+    }
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading transactions...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Transactions</h2>
-        <div className="flex items-center space-x-2">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Add Transaction
-          </Button>
-        </div>
       </div>
       
       <Card className="mt-6">
@@ -173,7 +111,6 @@ export default function TransactionsPage() {
                   <DropdownMenuItem>Expenses Only</DropdownMenuItem>
                   <DropdownMenuItem>This Month</DropdownMenuItem>
                   <DropdownMenuItem>Last Month</DropdownMenuItem>
-                  <DropdownMenuItem>Custom Range...</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               
@@ -194,31 +131,77 @@ export default function TransactionsPage() {
                 <TableHead>Description</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Account</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium">{transaction.description}</TableCell>
-                  <TableCell>{transaction.category}</TableCell>
-                  <TableCell>{format(transaction.date, 'MMM dd, yyyy')}</TableCell>
-                  <TableCell>{transaction.account}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span>{transaction.category?.icon}</span>
+                      <span>{transaction.category?.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{format(new Date(transaction.date), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      transaction.type === 'INCOME' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                    }`}>
+                      {transaction.type}
+                    </span>
+                  </TableCell>
                   <TableCell className={`text-right ${
                     transaction.type === 'INCOME' 
                       ? 'text-emerald-600 dark:text-emerald-400' 
                       : 'text-red-600 dark:text-red-400'
                   }`}>
-                    {transaction.type === 'INCOME' ? '+' : ''}
-                    ${Math.abs(transaction.amount).toFixed(2)}
+                    {transaction.type === 'INCOME' ? '+' : '-'}
+                    ${transaction.amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditTransaction(transaction)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          {filteredTransactions.length === 0 && (
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
+              No transactions found
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <EditTransactionDialog
+        transaction={editingTransaction}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false)
+          setEditingTransaction(null)
+        }}
+      />
     </DashboardLayout>
   )
 }

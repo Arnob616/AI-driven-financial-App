@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMonthlyAnalytics, getWeeklyAnalytics, getMonthlyTrends } from '@/lib/api/analytics'
+import { getDailyAnalytics, getWeeklyAnalytics, getMonthlyAnalytics, getMonthlyTrends } from '@/lib/api/analytics'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,6 +16,9 @@ export async function GET(request: NextRequest) {
 
     let data
     switch (type) {
+      case 'daily':
+        data = await getDailyAnalytics(userId, targetDate)
+        break
       case 'weekly':
         data = await getWeeklyAnalytics(userId, targetDate)
         break

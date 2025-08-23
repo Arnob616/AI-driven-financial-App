@@ -4,16 +4,13 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
-  CreditCard,
   DollarSign,
   Home,
   PiggyBank,
-  Settings,
-  Users
+  Settings
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 const routes = [
@@ -28,24 +25,6 @@ const routes = [
     icon: DollarSign,
     href: '/transactions',
     color: 'text-violet-500',
-  },
-  {
-    label: 'Accounts',
-    icon: CreditCard,
-    href: '/accounts',
-    color: 'text-pink-500',
-  },
-  {
-    label: 'Groups',
-    icon: Users,
-    href: '/groups',
-    color: 'text-orange-500',
-  },
-  {
-    label: 'Budget',
-    icon: PiggyBank,
-    href: '/budget',
-    color: 'text-emerald-500',
   },
   {
     label: 'Analytics',

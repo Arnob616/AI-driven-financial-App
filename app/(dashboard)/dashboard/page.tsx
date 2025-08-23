@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/lib/context/user-context"
 import { useTransactions } from "@/lib/hooks/useTransactions"
-import { useAccounts } from "@/lib/hooks/useAccounts"
+import DashboardLayout from "@/components/layout/dashboard-layout"
 import { 
   LineChart, 
   Line, 
@@ -22,17 +22,20 @@ import {
   Pie,
   Cell
 } from "recharts"
-import { ArrowUpRight, Plus, Wallet } from "lucide-react"
+import { ArrowUpRight, ArrowDownRight, Plus, Wallet, Edit, Trash2 } from "lucide-react"
 import { format } from "date-fns"
+import { EditTransactionDialog } from "@/components/dialogs/edit-transaction-dialog"
+import { toast } from "sonner"
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
 
 export default function DashboardPage() {
   const { user, isLoading: userLoading } = useUser()
-  const { transactions, loading: transactionsLoading } = useTransactions(user?.id || null)
-  const { accounts, totalBalance, loading: accountsLoading } = useAccounts(user?.id || null)
+  const { transactions, loading: transactionsLoading, deleteTransaction } = useTransactions(user?.id || null)
   const [analytics, setAnalytics] = useState<any>(null)
   const [weeklyData, setWeeklyData] = useState<any[]>([])
+  const [editingTransaction, setEditingTransaction] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -48,7 +51,7 @@ export default function DashboardPage() {
         const weeklyData = await weeklyResponse.json()
 
         setAnalytics(monthlyData)
-        setWeeklyData(weeklyData)
+        setWeeklyData(weeklyData.dailyData || [])
       } catch (error) {
         console.error('Error fetching analytics:', error)
       }
@@ -57,7 +60,23 @@ export default function DashboardPage() {
     fetchAnalytics()
   }, [user?.id])
 
-  if (userLoading || transactionsLoading || accountsLoading) {
+  const handleEditTransaction = (transaction: any) => {
+    setEditingTransaction(transaction)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (confirm('Are you sure you want to delete this transaction?')) {
+      try {
+        await deleteTransaction(id)
+        toast.success('Transaction deleted successfully!')
+      } catch (error) {
+        toast.error('Failed to delete transaction')
+      }
+    }
+  }
+
+  if (userLoading || transactionsLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
@@ -73,7 +92,7 @@ export default function DashboardPage() {
   const recentTransactions = transactions.slice(0, 5)
   const monthlyIncome = analytics?.totalIncome || 0
   const monthlyExpenses = analytics?.totalExpenses || 0
-  const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome * 100) : 0
+  const netIncome = monthlyIncome - monthlyExpenses
 
   const categoryData = analytics?.categoryBreakdown ? 
     Object.entries(analytics.categoryBreakdown).map(([name, value]) => ({
@@ -85,79 +104,52 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <div className="flex items-center space-x-2">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Add Account
-          </Button>
-        </div>
       </div>
       
       <Tabs defaultValue="overview" className="space-y-4 mt-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Total Balance
+                  Monthly Income
+                </CardTitle>
+                <ArrowUpRight className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">${monthlyIncome.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  This month
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+                <ArrowDownRight className="h-4 w-4 text-red-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">${monthlyExpenses.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  This month
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Net Income
                 </CardTitle>
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${totalBalance.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">
-                  Across {accounts.length} account{accounts.length !== 1 ? 's' : ''}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Monthly Income
-                </CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${monthlyIncome.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">
-                  This month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Expense</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <rect width="20" height="14" x="2" y="5" rx="2" />
-                  <path d="M2 10h20" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${monthlyExpenses.toFixed(2)}</div>
+                <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${netIncome.toFixed(2)}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   This month
                 </p>
@@ -166,7 +158,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Savings Rate
+                  Total Transactions
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -182,9 +174,9 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{savingsRate.toFixed(1)}%</div>
+                <div className="text-2xl font-bold">{transactions.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  Of monthly income
+                  All time
                 </p>
               </CardContent>
             </Card>
@@ -193,7 +185,7 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>Income vs Expenses</CardTitle>
+                <CardTitle>Weekly Overview</CardTitle>
                 <CardDescription>
                   Your financial activity for the past week
                 </CardDescription>
@@ -206,8 +198,8 @@ export default function DashboardPage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="expense" fill="hsl(var(--chart-1))" />
-                    <Bar dataKey="income" fill="hsl(var(--chart-2))" />
+                    <Bar dataKey="expense" fill="hsl(var(--chart-1))" name="Expenses" />
+                    <Bar dataKey="income" fill="hsl(var(--chart-2))" name="Income" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -249,34 +241,23 @@ export default function DashboardPage() {
             </Card>
           </div>
           
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-                <CardDescription>
-                  Your latest financial activities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-8">
-                  {recentTransactions.length > 0 ? recentTransactions.map((transaction) => (
-                    <div className="flex items-center\" key={transaction.id}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+              <CardDescription>
+                Your latest financial activities
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentTransactions.length > 0 ? recentTransactions.map((transaction) => (
+                  <div className="flex items-center justify-between" key={transaction.id}>
+                    <div className="flex items-center">
                       <div className={`rounded-full p-2 ${transaction.type === 'INCOME' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-500/20 text-red-700 dark:text-red-400'}`}>
                         {transaction.type === 'INCOME' ? (
                           <ArrowUpRight className="h-4 w-4" />
                         ) : (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            className="h-4 w-4"
-                          >
-                            <path d="M18 15l-6-6l-6 6" />
-                          </svg>
+                          <ArrowDownRight className="h-4 w-4" />
                         )}
                       </div>
                       <div className="ml-4 space-y-1">
@@ -287,88 +268,100 @@ export default function DashboardPage() {
                           {transaction.category?.name || 'Other'} • {format(new Date(transaction.date), 'MMM dd, yyyy')}
                         </p>
                       </div>
-                      <div className={`ml-auto font-medium ${transaction.type === 'INCOME' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`font-medium ${transaction.type === 'INCOME' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
                         {transaction.type === 'INCOME' ? '+' : '-'}${transaction.amount.toFixed(2)}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditTransaction(transaction)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )) : (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground">
-                      No recent transactions
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Monthly AI Insight</CardTitle>
-                <CardDescription>
-                  Personalized financial recommendations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Spending Trends</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {monthlyExpenses > 0 
-                        ? `You've spent $${monthlyExpenses.toFixed(2)} this month across ${Object.keys(analytics?.categoryBreakdown || {}).length} categories.`
-                        : "Start tracking your expenses to get personalized insights about your spending patterns."
-                      }
-                    </p>
                   </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Saving Opportunity</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {savingsRate > 0 
-                        ? `Great job! You're saving ${savingsRate.toFixed(1)}% of your income this month.`
-                        : "Consider setting up automatic transfers to build your savings habit."
-                      }
-                    </p>
+                )) : (
+                  <div className="flex items-center justify-center h-32 text-muted-foreground">
+                    No recent transactions
                   </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <h4 className="text-sm font-medium">Account Summary</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      You have {accounts.length} account{accounts.length !== 1 ? 's' : ''} with a total balance of ${totalBalance.toFixed(2)}.
-                      {accounts.length === 0 && " Add your first account to start tracking your finances."}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        <TabsContent value="analytics" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Advanced Analytics</CardTitle>
-              <CardDescription>
-                Detailed analysis of your financial data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex h-96 items-center justify-center">
-                <p className="text-muted-foreground">Detailed analytics will appear here</p>
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="reports" className="space-y-4">
+        <TabsContent value="analytics" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Financial Reports</CardTitle>
+              <CardTitle>Detailed Analytics</CardTitle>
               <CardDescription>
-                Generate and download reports
+                Comprehensive analysis of your financial data
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex h-96 items-center justify-center">
-                <p className="text-muted-foreground">Report generation options will appear here</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Monthly Summary</h4>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Total Income:</span>
+                      <span className="text-sm font-medium text-green-600">${monthlyIncome.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Total Expenses:</span>
+                      <span className="text-sm font-medium text-red-600">${monthlyExpenses.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Net Income:</span>
+                      <span className={`text-sm font-medium ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ${netIncome.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Transaction Count</h4>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Total Transactions:</span>
+                      <span className="text-sm font-medium">{analytics?.transactionCount || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Income Transactions:</span>
+                      <span className="text-sm font-medium text-green-600">
+                        {transactions.filter(t => t.type === 'INCOME').length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Expense Transactions:</span>
+                      <span className="text-sm font-medium text-red-600">
+                        {transactions.filter(t => t.type === 'EXPENSE').length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EditTransactionDialog
+        transaction={editingTransaction}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false)
+          setEditingTransaction(null)
+        }}
+      />
     </DashboardLayout>
   )
 }

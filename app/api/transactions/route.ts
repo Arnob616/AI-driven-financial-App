@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { amount, description, type, categoryId, accountId, userId, date } = body
+    const { amount, description, type, categoryId, userId, date } = body
 
-    if (!amount || !description || !type || !categoryId || !accountId || !userId) {
+    if (!amount || !description || !type || !categoryId || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
       description,
       type,
       categoryId,
-      accountId,
       userId,
       date: date ? new Date(date) : undefined,
     })

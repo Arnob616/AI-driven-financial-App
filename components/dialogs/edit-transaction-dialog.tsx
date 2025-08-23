@@ -1,20 +1,26 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import { useUser } from "@/lib/context/user-context"
 import { useTransactions } from "@/lib/hooks/useTransactions"
+import { Transaction } from "@/lib/types"
+import { format } from "date-fns"
 
-export function AddTransactionDialog() {
+interface EditTransactionDialogProps {
+  transaction: Transaction | null
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function EditTransactionDialog({ transaction, isOpen, onClose }: EditTransactionDialogProps) {
   const { user } = useUser()
-  const { addTransaction } = useTransactions(user?.id || null)
-  const [isOpen, setIsOpen] = useState(false)
+  const { updateTransaction } = useTransactions(user?.id || null)
   const [isLoading, setIsLoading] = useState(false)
   const [categories, setCategories] = useState<any[]>([])
   const [formData, setFormData] = useState({
@@ -22,7 +28,7 @@ export function AddTransactionDialog() {
     amount: "",
     type: "EXPENSE",
     category: "",
-    date: new Date().toISOString().split('T')[0]
+    date: ""
   })
 
   useEffect(() => {
@@ -40,13 +46,22 @@ export function AddTransactionDialog() {
     }
   }, [user?.id])
 
+  useEffect(() => {
+    if (transaction) {
+      setFormData({
+        description: transaction.description,
+        amount: transaction.amount.toString(),
+        type: transaction.type,
+        category: transaction.categoryId,
+        date: format(new Date(transaction.date), 'yyyy-MM-dd')
+      })
+    }
+  }, [transaction])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!user?.id) {
-      toast.error("Please log in to add transactions")
-      return
-    }
+    if (!transaction) return
 
     if (!formData.description || !formData.amount || !formData.category) {
       toast.error("Please fill in all required fields")
@@ -56,7 +71,7 @@ export function AddTransactionDialog() {
     setIsLoading(true)
 
     try {
-      await addTransaction({
+      await updateTransaction(transaction.id, {
         description: formData.description,
         amount: parseFloat(formData.amount),
         type: formData.type,
@@ -64,32 +79,20 @@ export function AddTransactionDialog() {
         date: new Date(formData.date),
       })
       
-      toast.success("Transaction added successfully!")
-      setIsOpen(false)
-      setFormData({
-        description: "",
-        amount: "",
-        type: "EXPENSE",
-        category: "",
-        date: new Date().toISOString().split('T')[0]
-      })
+      toast.success("Transaction updated successfully!")
+      onClose()
     } catch (error) {
-      toast.error("Failed to add transaction. Please try again.")
+      toast.error("Failed to update transaction. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Add Transaction
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Transaction</DialogTitle>
+          <DialogTitle>Edit Transaction</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -163,11 +166,11 @@ export function AddTransactionDialog() {
           </div>
           
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" type="button" onClick={() => setIsOpen(false)}>
+            <Button variant="outline" type="button" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Transaction"}
+              {isLoading ? "Updating..." : "Update Transaction"}
             </Button>
           </div>
         </form>

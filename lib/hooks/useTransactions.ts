@@ -55,11 +55,53 @@ export function useTransactions(userId: string | null) {
     }
   }
 
+  const updateTransaction = async (id: string, transactionData: any) => {
+    try {
+      const response = await fetch(`/api/transactions/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transactionData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update transaction')
+      }
+
+      const updatedTransaction = await response.json()
+      setTransactions(prev => 
+        prev.map(t => t.id === id ? updatedTransaction : t)
+      )
+      return updatedTransaction
+    } catch (err) {
+      throw err
+    }
+  }
+
+  const deleteTransaction = async (id: string) => {
+    try {
+      const response = await fetch(`/api/transactions/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete transaction')
+      }
+
+      setTransactions(prev => prev.filter(t => t.id !== id))
+    } catch (err) {
+      throw err
+    }
+  }
+
   return {
     transactions,
     loading,
     error,
     addTransaction,
+    updateTransaction,
+    deleteTransaction,
     refetch: () => {
       if (userId) {
         const fetchTransactions = async () => {

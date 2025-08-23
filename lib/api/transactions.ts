@@ -7,7 +7,6 @@ export async function getTransactions(userId: string): Promise<Transaction[]> {
       where: { userId },
       include: {
         category: true,
-        account: true,
       },
       orderBy: { date: 'desc' },
     })
@@ -20,7 +19,6 @@ export async function getTransactions(userId: string): Promise<Transaction[]> {
       type: transaction.type as TransactionType,
       categoryId: transaction.categoryId,
       userId: transaction.userId,
-      accountId: transaction.accountId,
       category: transaction.category ? {
         id: transaction.category.id,
         name: transaction.category.name,
@@ -40,7 +38,6 @@ export async function createTransaction(data: {
   description: string
   type: TransactionType
   categoryId: string
-  accountId: string
   userId: string
   date?: Date
 }) {
@@ -52,24 +49,49 @@ export async function createTransaction(data: {
       },
       include: {
         category: true,
-        account: true,
-      },
-    })
-
-    // Update account balance
-    const balanceChange = data.type === 'INCOME' ? data.amount : -data.amount
-    await prisma.account.update({
-      where: { id: data.accountId },
-      data: {
-        balance: {
-          increment: balanceChange,
-        },
       },
     })
 
     return transaction
   } catch (error) {
     console.error('Error creating transaction:', error)
+    throw error
+  }
+}
+
+export async function updateTransaction(
+  id: string,
+  data: {
+    amount?: number
+    description?: string
+    type?: TransactionType
+    categoryId?: string
+    date?: Date
+  }
+) {
+  try {
+    const transaction = await prisma.transaction.update({
+      where: { id },
+      data,
+      include: {
+        category: true,
+      },
+    })
+
+    return transaction
+  } catch (error) {
+    console.error('Error updating transaction:', error)
+    throw error
+  }
+}
+
+export async function deleteTransaction(id: string) {
+  try {
+    await prisma.transaction.delete({
+      where: { id },
+    })
+  } catch (error) {
+    console.error('Error deleting transaction:', error)
     throw error
   }
 }
@@ -90,7 +112,6 @@ export async function getTransactionsByDateRange(
       },
       include: {
         category: true,
-        account: true,
       },
       orderBy: { date: 'desc' },
     })
