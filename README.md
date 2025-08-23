@@ -4,7 +4,7 @@
 
 <ul>
   <li>💰 <b>Track Finances</b> – Monitor your <i>daily, weekly, and monthly</i> income & expenses</li>
-  <li>➕➖✏️ <b>Manage Transactions</b> – Add, remove, and update transactions with ease</li>
+  <li>➕➖ <b>Manage Transactions</b> – Add, remove, and update transactions with ease</li>
   <li>📊 <b>Interactive Dashboard</b> – Get a clear visual overview of your financial activity</li>
   <li>🌙☀️ <b>Dark/Light Mode</b> – Switch themes for a personalized experience</li>
 </ul>
