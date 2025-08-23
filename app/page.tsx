@@ -36,7 +36,6 @@ export default function Home() {
                   </h1>
                   <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl lg:mx-0">
                     Take control of your finances with our powerful budget tracking app. 
-                    Track expenses, split bills with friends, and get AI-powered insights.
                   </p>
                 </div>
                 <div className="flex flex-col gap-4 min-[400px]:flex-row justify-center lg:justify-start">
