@@ -1,5 +1,5 @@
 # FinanceFlow
-
+<img width="1277" height="574" alt="image" src="https://github.com/user-attachments/assets/93d53873-eb87-4e92-af34-be3195fda9da" />
 A simple and elegant personal finance tracking application built with Next.js, Prisma, and Neon DB.
 
 ## Features
