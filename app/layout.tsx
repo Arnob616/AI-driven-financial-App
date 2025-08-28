@@ -1,16 +1,14 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from "@/components/ui/sonner";
-import { SessionProvider } from 'next-auth/react';
-import { UserProvider } from '@/lib/context/user-context';
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Providers } from "./provider";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'FinanceFlow',
-  description: 'Track your expenses, income easily',
+  title: "FinanceFlow",
+  description: "Track your expenses, income easily",
 };
 
 export default function RootLayout({
@@ -27,12 +25,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SessionProvider>
-            <UserProvider>
-              {children}
-              <Toaster />
-            </UserProvider>
-          </SessionProvider>
+          <Providers>{children}</Providers>
         </ThemeProvider>
       </body>
     </html>
