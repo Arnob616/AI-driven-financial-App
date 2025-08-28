@@ -1,5 +1,6 @@
 "use client"
 
+import { signOut } from "next-auth/react"
 import {
   Cloud,
   CreditCard,
@@ -26,6 +27,10 @@ import { useUser } from "@/lib/context/user-context"
 
 export function UserNav() {
   const { user } = useUser()
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/" })
+  }
   
   return (
     <DropdownMenu>
@@ -62,7 +67,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

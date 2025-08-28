@@ -1,5 +1,6 @@
 "use client"
 
+import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ interface EditTransactionDialogProps {
 }
 
 export function EditTransactionDialog({ transaction, isOpen, onClose }: EditTransactionDialogProps) {
+  const { data: session } = useSession()
   const { user } = useUser()
   const { updateTransaction } = useTransactions(user?.id || null)
   const [isLoading, setIsLoading] = useState(false)
@@ -32,10 +34,10 @@ export function EditTransactionDialog({ transaction, isOpen, onClose }: EditTran
   })
 
   useEffect(() => {
-    if (user?.id) {
+    if (session?.user?.id) {
       const fetchCategories = async () => {
         try {
-          const response = await fetch(`/api/categories?userId=${user.id}`)
+          const response = await fetch(`/api/categories`)
           const data = await response.json()
           setCategories(data)
         } catch (error) {
@@ -44,7 +46,7 @@ export function EditTransactionDialog({ transaction, isOpen, onClose }: EditTran
       }
       fetchCategories()
     }
-  }, [user?.id])
+  }, [session?.user?.id])
 
   useEffect(() => {
     if (transaction) {
@@ -61,6 +63,11 @@ export function EditTransactionDialog({ transaction, isOpen, onClose }: EditTran
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!session?.user?.id) {
+      toast.error("Please log in to edit transactions")
+      return
+    }
+
     if (!transaction) return
 
     if (!formData.description || !formData.amount || !formData.category) {

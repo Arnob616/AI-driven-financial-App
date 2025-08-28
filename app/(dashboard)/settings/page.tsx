@@ -1,5 +1,7 @@
 "use client"
 
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,8 +21,15 @@ import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function SettingsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   
+  if (status === "unauthenticated") {
+    router.push("/login")
+    return null
+  }
+
   const handleSave = () => {
     setIsLoading(true)
     // Simulate API call

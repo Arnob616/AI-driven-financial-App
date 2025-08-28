@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from 'next-auth/react';
 import { UserProvider } from '@/lib/context/user-context';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -26,10 +27,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <UserProvider>
-            {children}
-            <Toaster />
-          </UserProvider>
+          <SessionProvider>
+            <UserProvider>
+              {children}
+              <Toaster />
+            </UserProvider>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

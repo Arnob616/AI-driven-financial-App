@@ -1,5 +1,7 @@
 "use client"
 
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -30,6 +32,8 @@ import { toast } from "sonner"
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const { user, isLoading: userLoading } = useUser()
   const { transactions, loading: transactionsLoading, deleteTransaction } = useTransactions(user?.id || null)
   const [analytics, setAnalytics] = useState<any>(null)
@@ -38,13 +42,19 @@ export default function DashboardPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   useEffect(() => {
-    if (!user?.id) return
+    if (status === "unauthenticated") {
+      router.push("/login")
+    }
+  }, [status, router])
+
+  useEffect(() => {
+    if (!session?.user?.id) return
 
     const fetchAnalytics = async () => {
       try {
         const [monthlyResponse, weeklyResponse] = await Promise.all([
-          fetch(`/api/analytics?userId=${user.id}&type=monthly`),
-          fetch(`/api/analytics?userId=${user.id}&type=weekly`)
+          fetch(`/api/analytics?type=monthly`),
+          fetch(`/api/analytics?type=weekly`)
         ])
 
         const monthlyData = await monthlyResponse.json()
@@ -58,8 +68,9 @@ export default function DashboardPage() {
     }
 
     fetchAnalytics()
-  }, [user?.id])
+  }, [session?.user?.id])
 
+  if (status === "loading" || userLoading || transactionsLoading) {
   const handleEditTransaction = (transaction: any) => {
     setEditingTransaction(transaction)
     setIsEditDialogOpen(true)
@@ -76,7 +87,6 @@ export default function DashboardPage() {
     }
   }
 
-  if (userLoading || transactionsLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">

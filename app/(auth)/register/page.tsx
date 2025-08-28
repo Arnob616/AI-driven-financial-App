@@ -1,7 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { signIn, getSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { PiggyBank } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -11,17 +13,62 @@ import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession()
+      if (session) {
+        router.push("/dashboard")
+      }
+    }
+    checkSession()
+  }, [router])
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    setError("")
     setIsLoading(true)
-    // In a real app, integrate with authentication here
     
-    // Simulate registration
-    setTimeout(() => {
-      window.location.href = "/dashboard"
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      })
+
+      if (response.ok) {
+        // Auto sign in after successful registration
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        })
+
+        if (result?.error) {
+          setError("Registration successful but login failed")
+        } else {
+          router.push("/dashboard")
+        }
+      } else {
+        const data = await response.json()
+        setError(data.error || "Registration failed")
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.")
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -52,7 +99,10 @@ export default function RegisterPage() {
                   type="text"
                   autoCapitalize="none"
                   autoCorrect="off"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   disabled={isLoading}
+                  required
                 />
               </div>
               <div className="grid gap-2">
@@ -64,7 +114,10 @@ export default function RegisterPage() {
                   autoCapitalize="none"
                   autoComplete="email"
                   autoCorrect="off"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
+                  required
                 />
               </div>
               <div className="grid gap-2">
@@ -74,9 +127,17 @@ export default function RegisterPage() {
                   type="password"
                   autoCapitalize="none"
                   autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
+                  required
                 />
               </div>
+              {error && (
+                <div className="text-sm text-red-600 text-center">
+                  {error}
+                </div>
+              )}
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create account"}
               </Button>

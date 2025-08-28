@@ -1,5 +1,6 @@
 "use client"
 
+import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import { useUser } from "@/lib/context/user-context"
 import { useTransactions } from "@/lib/hooks/useTransactions"
 
 export function AddTransactionDialog() {
+  const { data: session } = useSession()
   const { user } = useUser()
   const { addTransaction } = useTransactions(user?.id || null)
   const [isOpen, setIsOpen] = useState(false)
@@ -26,10 +28,10 @@ export function AddTransactionDialog() {
   })
 
   useEffect(() => {
-    if (user?.id) {
+    if (session?.user?.id) {
       const fetchCategories = async () => {
         try {
-          const response = await fetch(`/api/categories?userId=${user.id}`)
+          const response = await fetch(`/api/categories`)
           const data = await response.json()
           setCategories(data)
         } catch (error) {
@@ -38,12 +40,12 @@ export function AddTransactionDialog() {
       }
       fetchCategories()
     }
-  }, [user?.id])
+  }, [session?.user?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!user?.id) {
+    if (!session?.user?.id) {
       toast.error("Please log in to add transactions")
       return
     }

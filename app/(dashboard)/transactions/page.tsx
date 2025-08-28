@@ -1,5 +1,7 @@
 "use client"
 
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,12 +37,19 @@ import { EditTransactionDialog } from "@/components/dialogs/edit-transaction-dia
 import { toast } from "sonner"
 
 export default function TransactionsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const { user } = useUser()
   const { transactions, loading, deleteTransaction } = useTransactions(user?.id || null)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [editingTransaction, setEditingTransaction] = useState<any>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   
+  if (status === "unauthenticated") {
+    router.push("/login")
+    return null
+  }
+
   const filteredTransactions = transactions.filter(transaction => 
     transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
     transaction.category?.name.toLowerCase().includes(searchQuery.toLowerCase())

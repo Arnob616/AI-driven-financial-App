@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 import { getDailyAnalytics, getWeeklyAnalytics, getMonthlyAnalytics, getMonthlyTrends } from '@/lib/api/analytics'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const userId = session.user.id
     const type = searchParams.get('type') || 'monthly'
     const date = searchParams.get('date')
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-    }
 
     const targetDate = date ? new Date(date) : new Date()
 

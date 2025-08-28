@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 import { getTransactions, createTransaction } from '@/lib/api/transactions'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const userId = session.user.id
 
     const transactions = await getTransactions(userId)
     return NextResponse.json(transactions)
@@ -20,10 +23,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { amount, description, type, categoryId, userId, date } = body
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!amount || !description || !type || !categoryId || !userId) {
+    const body = await request.json()
+    const { amount, description, type, categoryId, date } = body
+
+    if (!amount || !description || !type || !categoryId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -32,7 +40,7 @@ export async function POST(request: NextRequest) {
       description,
       type,
       categoryId,
-      userId,
+      userId: session.user.id,
       date: date ? new Date(date) : undefined,
     })
 

@@ -1,9 +1,11 @@
 'use client'
 
+import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { Transaction } from '@/lib/types'
 
 export function useTransactions(userId: string | null) {
+  const { data: session } = useSession()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,12 +37,16 @@ export function useTransactions(userId: string | null) {
 
   const addTransaction = async (transactionData: any) => {
     try {
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated')
+      }
+
       const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...transactionData, userId }),
+        body: JSON.stringify({ ...transactionData, userId: session.user.id }),
       })
 
       if (!response.ok) {

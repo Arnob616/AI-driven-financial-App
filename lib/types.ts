@@ -26,4 +26,11 @@ export type User = {
   image?: string;
 };
 
+export type Account = {
+  id: string;
+  name: string;
+  balance: number;
+  userId: string;
+};
+
 export type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly';

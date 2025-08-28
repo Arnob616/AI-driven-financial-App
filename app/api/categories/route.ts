@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 import { getCategories, createCategory, getDefaultCategories } from '@/lib/api/categories'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const userId = session.user.id
 
     const categories = await getDefaultCategories(userId)
     return NextResponse.json(categories)
@@ -20,10 +23,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, icon, color, userId } = body
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!name || !icon || !color || !userId) {
+    const body = await request.json()
+    const { name, icon, color } = body
+
+    if (!name || !icon || !color) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -31,7 +39,7 @@ export async function POST(request: NextRequest) {
       name,
       icon,
       color,
-      userId,
+      userId: session.user.id,
     })
 
     return NextResponse.json(category, { status: 201 })

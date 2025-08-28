@@ -1,5 +1,7 @@
 "use client"
 
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,6 +28,8 @@ import {
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
 
 export default function AnalyticsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const { user } = useUser()
   const [dailyData, setDailyData] = useState<any>(null)
   const [weeklyData, setWeeklyData] = useState<any>(null)
@@ -33,17 +37,22 @@ export default function AnalyticsPage() {
   const [trendsData, setTrendsData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  if (status === "unauthenticated") {
+    router.push("/login")
+    return null
+  }
+
   useEffect(() => {
-    if (!user?.id) return
+    if (!session?.user?.id) return
 
     const fetchAnalytics = async () => {
       try {
         setLoading(true)
         const [dailyResponse, weeklyResponse, monthlyResponse, trendsResponse] = await Promise.all([
-          fetch(`/api/analytics?userId=${user.id}&type=daily`),
-          fetch(`/api/analytics?userId=${user.id}&type=weekly`),
-          fetch(`/api/analytics?userId=${user.id}&type=monthly`),
-          fetch(`/api/analytics?userId=${user.id}&type=trends`)
+          fetch(`/api/analytics?type=daily`),
+          fetch(`/api/analytics?type=weekly`),
+          fetch(`/api/analytics?type=monthly`),
+          fetch(`/api/analytics?type=trends`)
         ])
 
         const [daily, weekly, monthly, trends] = await Promise.all([
@@ -65,7 +74,7 @@ export default function AnalyticsPage() {
     }
 
     fetchAnalytics()
-  }, [user?.id])
+  }, [session?.user?.id])
 
   if (loading) {
     return (
