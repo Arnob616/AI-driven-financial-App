@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { PiggyBank } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   return (
@@ -13,7 +12,6 @@ export default function Home() {
             <span className="font-semibold">FinanceFlow</span>
           </div>
           <nav className="ml-auto flex items-center gap-4 sm:gap-6">
-            <ThemeToggle />
             <Link href="/login" className="text-sm font-medium hover:underline underline-offset-4">
               Login
             </Link>
