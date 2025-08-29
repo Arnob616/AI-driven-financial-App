@@ -74,7 +74,7 @@ export default function DashboardPage() {
     fetchAnalytics()
   }, [session?.user?.id])
 
-  // ✅ moved here (outside of loading check)
+  // ✅ moved here before return
   const handleEditTransaction = (transaction: any) => {
     setEditingTransaction(transaction)
     setIsEditDialogOpen(true)
