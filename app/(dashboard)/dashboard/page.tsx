@@ -10,8 +10,6 @@ import { useUser } from "@/lib/context/user-context"
 import { useTransactions } from "@/lib/hooks/useTransactions"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { 
-  LineChart, 
-  Line, 
   BarChart, 
   Bar, 
   XAxis, 
@@ -24,12 +22,18 @@ import {
   Pie,
   Cell
 } from "recharts"
-import { ArrowUpRight, ArrowDownRight, Plus, Wallet, Edit, Trash2 } from "lucide-react"
+import { ArrowUpRight, ArrowDownRight, Wallet, Edit, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { EditTransactionDialog } from "@/components/dialogs/edit-transaction-dialog"
 import { toast } from "sonner"
 
-const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
+const COLORS = [
+  'hsl(var(--chart-1))', 
+  'hsl(var(--chart-2))', 
+  'hsl(var(--chart-3))', 
+  'hsl(var(--chart-4))', 
+  'hsl(var(--chart-5))'
+]
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -70,7 +74,7 @@ export default function DashboardPage() {
     fetchAnalytics()
   }, [session?.user?.id])
 
-  if (status === "loading" || userLoading || transactionsLoading) {
+  // ✅ moved here (outside of loading check)
   const handleEditTransaction = (transaction: any) => {
     setEditingTransaction(transaction)
     setIsEditDialogOpen(true)
@@ -87,6 +91,7 @@ export default function DashboardPage() {
     }
   }
 
+  if (status === "loading" || userLoading || transactionsLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
@@ -121,20 +126,19 @@ export default function DashboardPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+        
+        {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
+          {/* Top Stats */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Monthly Income
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
                 <ArrowUpRight className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">${monthlyIncome.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">
-                  This month
-                </p>
+                <p className="text-xs text-muted-foreground">This month</p>
               </CardContent>
             </Card>
             <Card>
@@ -144,32 +148,24 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">${monthlyExpenses.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">
-                  This month
-                </p>
+                <p className="text-xs text-muted-foreground">This month</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Net Income
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Net Income</CardTitle>
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   ${netIncome.toFixed(2)}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  This month
-                </p>
+                <p className="text-xs text-muted-foreground">This month</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Transactions
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -185,20 +181,17 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{transactions.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  All time
-                </p>
+                <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
           </div>
           
+          {/* Charts */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Weekly Overview</CardTitle>
-                <CardDescription>
-                  Your financial activity for the past week
-                </CardDescription>
+                <CardDescription>Your financial activity for the past week</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={350}>
@@ -217,9 +210,7 @@ export default function DashboardPage() {
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Spending by Category</CardTitle>
-                <CardDescription>
-                  Your expense distribution this month
-                </CardDescription>
+                <CardDescription>Your expense distribution this month</CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center">
                 {categoryData.length > 0 ? (
@@ -251,12 +242,11 @@ export default function DashboardPage() {
             </Card>
           </div>
           
+          {/* Recent Transactions */}
           <Card>
             <CardHeader>
               <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>
-                Your latest financial activities
-              </CardDescription>
+              <CardDescription>Your latest financial activities</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -308,13 +298,13 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Detailed Analytics</CardTitle>
-              <CardDescription>
-                Comprehensive analysis of your financial data
-              </CardDescription>
+              <CardDescription>Comprehensive analysis of your financial data</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
@@ -364,6 +354,7 @@ export default function DashboardPage() {
         </TabsContent>
       </Tabs>
 
+      {/* Edit Transaction Modal */}
       <EditTransactionDialog
         transaction={editingTransaction}
         isOpen={isEditDialogOpen}
