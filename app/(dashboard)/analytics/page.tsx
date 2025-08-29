@@ -48,24 +48,21 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true)
-        const [dailyResponse, weeklyResponse, monthlyResponse, trendsResponse] = await Promise.all([
+        const [dailyResponse, weeklyResponse, monthlyResponse] = await Promise.all([
           fetch(`/api/analytics?type=daily`),
           fetch(`/api/analytics?type=weekly`),
           fetch(`/api/analytics?type=monthly`),
-          fetch(`/api/analytics?type=trends`)
         ])
 
-        const [daily, weekly, monthly, trends] = await Promise.all([
+        const [daily, weekly, monthly] = await Promise.all([
           dailyResponse.json(),
           weeklyResponse.json(),
           monthlyResponse.json(),
-          trendsResponse.json()
         ])
 
         setDailyData(daily)
         setWeeklyData(weekly)
         setMonthlyData(monthly)
-        setTrendsData(trends)
       } catch (error) {
         console.error('Error fetching analytics:', error)
       } finally {
@@ -112,7 +109,6 @@ export default function AnalyticsPage() {
           <TabsTrigger value="daily">Daily</TabsTrigger>
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="monthly">Monthly</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
         
         <TabsContent value="daily" className="space-y-4">
@@ -318,43 +314,6 @@ export default function AnalyticsPage() {
           </div>
         </TabsContent>
         
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>6-Month Financial Trends</CardTitle>
-              <CardDescription>
-                Income and expense trends over the past 6 months
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={400}>
-                <AreaChart data={trendsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Area 
-                    type="monotone" 
-                    dataKey="income" 
-                    stackId="1" 
-                    stroke="hsl(var(--chart-2))" 
-                    fill="hsl(var(--chart-2)/0.2)" 
-                    name="Income"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="expense" 
-                    stackId="2" 
-                    stroke="hsl(var(--chart-1))" 
-                    fill="hsl(var(--chart-1)/0.2)" 
-                    name="Expenses"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </DashboardLayout>
   )

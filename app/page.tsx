@@ -4,80 +4,95 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="w-full">
-        <div className="container flex h-16 items-center px-4 md:px-6">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-gradient-to-b from-white via-slate-50 to-slate-100">
+      {/* Navbar */}
+      <header className="sticky top-0 z-50 w-full border-b bg-white/70 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 md:px-6 flex h-16 items-center justify-between">
           <div className="flex items-center space-x-2">
-            <PiggyBank className="h-6 w-6 text-primary" />
-            <span className="font-semibold">FinanceFlow</span>
+            <PiggyBank className="h-7 w-7 text-primary" />
+            <span className="font-bold text-lg tracking-tight">FinanceFlow</span>
           </div>
-          <nav className="ml-auto flex items-center gap-4 sm:gap-6">
-            <Link href="/login" className="text-sm font-medium hover:underline underline-offset-4">
+          <nav className="flex items-center gap-6">
+            <Link
+              href="/login"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
               Login
             </Link>
-            <Link href="/register" className="text-sm font-medium hover:underline underline-offset-4">
+            <Link
+              href="/register"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
               Register
             </Link>
           </nav>
         </div>
       </header>
 
+      {/* Hero */}
       <main className="flex-1">
-        {/* Hero Section - Centered content */}
-        <section className="w-full bg-background py-12 md:py-24 lg:py-32 xl:py-48">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12">
-              <div className="flex flex-col justify-center space-y-6 text-center lg:text-left">
-                <div className="space-y-4">
-                  <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                    Smart financial tracking for everyone
-                  </h1>
-                  <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl lg:mx-0">
-                    Take control of your finances with our powerful budget tracking app. 
-                  </p>
-                </div>
-                <div className="flex flex-col gap-4 min-[400px]:flex-row justify-center lg:justify-start">
-                  <Link href="/register">
-                    <Button size="lg" className="rounded-full w-full min-[400px]:w-auto">Get Started</Button>
-                  </Link>
-                  <Link href="/login">
-                    <Button size="lg" variant="outline" className="rounded-full w-full min-[400px]:w-auto">
-                      Sign In
-                    </Button>
-                  </Link>
-                </div>
+        <section className="relative w-full overflow-hidden py-20 md:py-32 lg:py-40">
+          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-indigo-50 to-transparent" />
+          <div className="mx-auto max-w-7xl px-4 md:px-6 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+            <div className="flex flex-col space-y-6 text-center lg:text-left">
+              <h1 className="bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl md:text-6xl leading-tight">
+                Smart financial tracking for everyone
+              </h1>
+              <p className="mx-auto max-w-[600px] text-lg text-muted-foreground lg:mx-0">
+                Take control of your finances with our powerful budget tracking app.
+              </p>
+              <div className="flex flex-col gap-4 min-[400px]:flex-row justify-center lg:justify-start">
+                <Link href="/register">
+                  <Button size="lg" className="rounded-full shadow-lg hover:shadow-xl transition-all">
+                    Get Started
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full backdrop-blur-sm border-muted-foreground/30 hover:shadow-lg transition-all"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
               </div>
-              <div className="flex items-center justify-center">
-                <div className="relative aspect-video overflow-hidden rounded-xl border bg-card shadow-xl w-full max-w-lg">
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-chart-1/20 to-chart-2/20">
-                    <PiggyBank className="h-24 w-24 text-primary" />
-                  </div>
+            </div>
+
+            {/* Hero Card */}
+            <div className="flex items-center justify-center">
+              <div className="relative aspect-video w-full max-w-lg overflow-hidden rounded-2xl border bg-white/60 shadow-2xl backdrop-blur-md">
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-tr from-primary/10 via-indigo-200/20 to-transparent">
+                  <PiggyBank className="h-24 w-24 text-primary drop-shadow-md" />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Section - Centered content */}
-        <section className="w-full bg-muted py-12 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="mx-auto max-w-3xl text-center">
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Features</h2>
-                <p className="text-muted-foreground md:text-xl">
-                  Everything you need to manage your finances effectively
-                </p>
-              </div>
+        {/* Features */}
+        <section className="w-full bg-white py-20 md:py-28">
+          <div className="mx-auto max-w-7xl px-4 md:px-6 text-center">
+            <div className="mx-auto max-w-3xl space-y-4">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+                Features
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Developed a finance application to track daily, weekly, and monthly income and expenses. Implemented features to add, remove & update transactions, with an interactive user dashboard.
+              </p>
             </div>
-            <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-              {/* Feature Cards */}
+
+            <div className="mx-auto mt-16 grid max-w-5xl gap-8 md:grid-cols-3">
               {features.map((feature, index) => (
-                <div key={index} className="rounded-lg border bg-card p-6 shadow-sm">
+                <div
+                  key={index}
+                  className="rounded-2xl border bg-white/60 p-6 text-left shadow-lg backdrop-blur-sm transition hover:shadow-xl hover:-translate-y-1 hover:scale-105 duration-300"
+                >
                   <div className="flex items-center gap-4">
-                    <div className="rounded-full bg-primary/10 p-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-primary/20 to-indigo-200/40">
                       {feature.icon}
                     </div>
-                    <h3 className="font-semibold">{feature.title}</h3>
+                    <h3 className="text-lg font-semibold">{feature.title}</h3>
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">
                     {feature.description}
@@ -89,16 +104,17 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="w-full border-t">
-        <div className="container mx-auto flex flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center md:px-6">
+      {/* Footer */}
+      <footer className="border-t bg-white/70 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 md:px-6 flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
             © 2025 FinanceFlow. All rights reserved.
           </p>
-          <nav className="flex gap-4 sm:ml-auto sm:gap-6">
-            <Link href="#" className="text-xs hover:underline underline-offset-4">
+          <nav className="flex gap-6">
+            <Link href="#" className="text-xs text-muted-foreground hover:text-primary">
               Terms of Service
             </Link>
-            <Link href="#" className="text-xs hover:underline underline-offset-4">
+            <Link href="#" className="text-xs text-muted-foreground hover:text-primary">
               Privacy
             </Link>
           </nav>
@@ -131,9 +147,9 @@ const features = [
       </svg>
     ),
     title: "Expense Tracking",
-    description: "Track your daily expenses and categorize them for better financial management."
+    description:
+      "Track your daily expenses and categorize them for better financial management.",
   },
-  
   {
     icon: (
       <svg
@@ -152,7 +168,8 @@ const features = [
       </svg>
     ),
     title: "Budget Planning",
-    description: "Set budget goals for different categories and track your progress over time."
+    description:
+      "Set budget goals for different categories and track your progress over time.",
   },
   {
     icon: (
@@ -173,29 +190,7 @@ const features = [
       </svg>
     ),
     title: "Analytics",
-    description: "Visualize your spending patterns with interactive charts and graphs."
+    description:
+      "Visualize your spending patterns with interactive charts and graphs.",
   },
-  {
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5 text-primary"
-      >
-        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-        <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-      </svg>
-    ),
-    title: "Multiple Accounts",
-    description: "Manage multiple financial accounts in one place with unified view."
-  },
- 
 ];
