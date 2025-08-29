@@ -9,7 +9,6 @@ import { PiggyBank } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -73,10 +72,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
-      
       <div className="w-full max-w-md space-y-8 px-4">
         <div className="flex flex-col items-center space-y-2 text-center">
           <div className="flex items-center space-x-2">
